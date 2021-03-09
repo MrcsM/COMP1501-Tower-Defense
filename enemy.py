@@ -20,19 +20,23 @@ class Enemy:
         Input: enemy type (string), location (tuple of ints)
         Output: An Enemy Object
         '''
+        self.size = 40
         self.name = enemy_type
-        self.sprite = pygame.image.load(Enemy.enemy_data[enemy_type]["sprite"]).convert_alpha()
+        self.sprite = pygame.transform.scale(pygame.image.load(Enemy.enemy_data[enemy_type]["sprite"]).convert_alpha(), (self.size, self.size))
         self.health = Enemy.enemy_data[enemy_type]["health"]
         self.speed = Enemy.enemy_data[enemy_type]["speed"]
         self.location = location
-        self.direction = None
+        self.direction = "Down"
+        
 
 #### ====================================================================================================================== ####
 #############                                       ENEMY_FUNCTIONS                                                #############
 #### ====================================================================================================================== ####
 
-def update_enemy(enemy, direction=None, damage=0):
-    # Replace this with code to update the enemy's location/etc.break
+def update_enemy(enemy, direction=None, damage=0): #todo: hard-code path
+    #if direction = "Down": 
+        #(col, row) = (location[0] // settings.tile_size[0], location[1] // settings.tile_size[1])
+
     pass # Remove this once you've completed the code
 
 def render_enemy(enemy, screen, settings):

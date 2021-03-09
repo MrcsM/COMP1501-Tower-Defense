@@ -35,13 +35,11 @@ class Map:
 #### ====================================================================================================================== ####
 
 def render_map(map, screen, settings):
-    ''' Helper function that renders the Map.
-    Input: Map Object, screen (pygame display), Settings Object
-    Output: None
-    '''
     for cell in map.map_data:
         screen.blit(map.map_data[cell]["sprite"], [cell[0] * settings.tile_size[0], cell[1] * settings.tile_size[1]])
 
 def check_location(map, settings, location):
-    # Replace this with code for checking a given location for tower placement
-    pass # Remove this once you've completed the code
+    (col, row) = (location[0] // settings.tile_size[0], location[1] // settings.tile_size[1])
+    if map.map_data[(col, row)]["value"] == "B":
+        return True
+    return False

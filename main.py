@@ -60,11 +60,23 @@ def process(game_data):
         # Handle Mouse Button Down
         if event.type == pygame.MOUSEBUTTONDOWN:
             game_data["clicked"] = True
-            game_data["selected_tower"] = False
+            if game_data["shop"].selected_item != None:
+                game_data["selected_tower"] = game_data["shop"].selected_item
+                game_data["shop"].clicked_item = game_data["shop"].selected_item
+            else:
+                game_data["selected_tower"] = False
 
         # Handle Mouse Button Up
         if event.type == pygame.MOUSEBUTTONUP:
             game_data["clicked"] = False
+            if game_data["selected_tower"] != False:
+                # Figure out why it doesn't place correctly
+                loc = (pygame.mouse.get_pos()[0] + Tower.tower_data[game_data["selected_tower"]]["radius"], pygame.mouse.get_pos()[1] + Tower.tower_data[game_data["selected_tower"]]["radius"])
+                if check_location(game_data["map"], game_data["settings"], loc):
+                    game_data["towers"].append(Tower(game_data["selected_tower"], loc, Tower.tower_data[game_data["selected_tower"]]["radius"]))
+                    game_data["shop"].clicked_item = None
+                    game_data["selected_tower"] = False
+
 
 #### ====================================================================================================================== ####
 #############                                            UPDATE                                                    #############
@@ -78,6 +90,11 @@ def update(game_data):
     update_shop(game_data["shop"], game_data["current_currency"], game_data["settings"])
     
     ## Replace this with code to update the Enemies ##
+    for cell in game_data["map"].map_data:
+        if game_data["map"].map_data[cell]["value"] == "S":
+            loc = (cell[0] * game_data["settings"].tile_size[0], cell[1] * game_data["settings"].tile_size[1])
+    if len(game_data["enemies"]) < 5:
+        game_data["enemies"].append(Enemy("Lesser Alien", loc))
 
     ## Replace this with code to update the Towers ##
 
@@ -98,6 +115,7 @@ def render(game_data):
         render_enemy(enemy, game_data["screen"], game_data["settings"])
     for tower in game_data["towers"]:
         render_tower(tower, game_data["screen"], game_data["settings"])
+
     pygame.display.update()
 
 #### ====================================================================================================================== ####
