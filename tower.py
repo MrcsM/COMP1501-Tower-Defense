@@ -6,6 +6,7 @@ from helper_functions import *
 import pygame
 import math
 from enemy import *
+import time
 
 #### ====================================================================================================================== ####
 #############                                         TOWER_CLASS                                                  #############
@@ -32,6 +33,21 @@ class Tower:
         self.isClicked = False
         self.attacking = None
         self.rotation = 0.0
+        self.last_fire = 0
+
+class Bullet:
+    bullet_data = {}
+    for bullet in csv_loader("data/bullet.csv"):
+        bullet_data["bullet"] = { "sprite": bullet[0], "radius": int(bullet[1]), "damage": int(bullet[2]) }
+
+    def __init__(self, location, tower):
+        self.location = location
+        self.tower = tower
+        self.rotation = self.tower.rotation
+        self.goingFor = self.tower.attacking
+        self.velocity = (0, 0)
+        self.radius_sprite = int(Bullet.bullet_data["bullet"]["radius"])
+        self.sprite = pygame.transform.scale(pygame.image.load(Bullet.bullet_data["bullet"]["sprite"]).convert_alpha(), (self.radius_sprite, self.radius_sprite))
 
 #### ====================================================================================================================== ####
 #############                                       TOWER_FUNCTIONS                                                #############
@@ -39,8 +55,10 @@ class Tower:
 
 def update_tower(tower, map):
     if tower.attacking != None:
-        update_enemy(tower.attacking, map, None, tower.damage)
-    pass
+        if tower.last_fire > tower.rate_of_fire * 1000: #Working
+            #render_bullet(Bullet(tower.location), pygame.display.get_surface())
+            #update_enemy(tower.attacking, map, None, tower.damage)
+            tower.last_fire = 0
 
 def render_tower(tower, screen, settings):
     ''' Helper function that renders a single provided Tower.
@@ -53,3 +71,18 @@ def render_tower(tower, screen, settings):
     else:
         sprite = pygame.transform.rotate(tower.sprite, tower.rotation)
         screen.blit(sprite, rect)
+
+#### ====================================================================================================================== ####
+#############                                      BULLET_FUNCTIONS                                                #############
+#### ====================================================================================================================== ####
+
+def render_bullet(bullet, screen):
+    rect = bullet.sprite.get_rect(center=bullet.location)
+    screen.blit(bullet.sprite, rect)
+
+def update_bullet(bullet):
+    if bullet.goingFor != None:
+        enemy = bullet.goingFor
+        new_angle = math.atan2(pygame.display.get_surface().get_height() - enemy.location[1], pygame.display.get_surface().get_width() - enemy.location[0])
+        (x, y) = math.cos(new_angle), math.sin(new_angle)
+        bullet.velocity = (x, y)
