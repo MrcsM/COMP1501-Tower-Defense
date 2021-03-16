@@ -60,6 +60,11 @@ def update_shop(shop, current_currency, settings):
             shop.shop_data[item]["available"] = True
         if (mX > shop.shop_data[item]["location"][0] and mX < shop.shop_data[item]["location"][0] + shop.ui_data["item_size"]) and (mY > shop.shop_data[item]["location"][1] and mY < shop.shop_data[item]["location"][1] + shop.ui_data["item_size"]):
                 shop.selected_item = item
+                left, _, _ = pygame.mouse.get_pressed()
+                if left and shop.shop_data[item]["available"]:
+                    shop.clicked_item = item
+                elif left:
+                    shop.clicked_item = None
     # Replace with code to update the Shop
     pass # Remove this once you've completed the code
 

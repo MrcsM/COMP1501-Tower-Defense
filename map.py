@@ -39,7 +39,18 @@ def render_map(map, screen, settings):
         screen.blit(map.map_data[cell]["sprite"], [cell[0] * settings.tile_size[0], cell[1] * settings.tile_size[1]])
 
 def check_location(map, settings, location):
-    (col, row) = (location[0] // settings.tile_size[0], location[1] // settings.tile_size[1])
-    if map.map_data[(col, row)]["value"] == "B":
-        return True
-    return False
+    relevant_tile = location[0] // 40, location[1] // 40
+    if relevant_tile not in map.map_data: return False
+    val = map.map_data[relevant_tile]
+    return val["value"] == "B"
+
+MAP = None
+
+def set_map(map):
+    global MAP
+    MAP = map
+
+def tileLoc(loc):
+    relevant_tile = loc[0] // 40, loc[1] // 40
+    return relevant_tile[0], relevant_tile[1], MAP.map_data[relevant_tile]["value"]
+

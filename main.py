@@ -10,6 +10,8 @@ from enemy import *
 from map import *
 import pygame
 import sys
+import random
+import math
 
 #### ====================================================================================================================== ####
 #############                                         INITIALIZE                                                   #############
@@ -40,6 +42,8 @@ def initialize():
                   "shop": Shop("Space", settings),
                   "map": Map(settings) }
 
+    set_map(game_data["map"])
+
     return game_data
 
 #### ====================================================================================================================== ####
@@ -60,22 +64,10 @@ def process(game_data):
         # Handle Mouse Button Down
         if event.type == pygame.MOUSEBUTTONDOWN:
             game_data["clicked"] = True
-            if game_data["shop"].selected_item != None:
-                game_data["selected_tower"] = game_data["shop"].selected_item
-                game_data["shop"].clicked_item = game_data["shop"].selected_item
-            else:
-                game_data["selected_tower"] = False
 
         # Handle Mouse Button Up
         if event.type == pygame.MOUSEBUTTONUP:
             game_data["clicked"] = False
-            if game_data["selected_tower"] != False:
-                # Figure out why it doesn't place correctly
-                loc = (pygame.mouse.get_pos()[0] + Tower.tower_data[game_data["selected_tower"]]["radius"], pygame.mouse.get_pos()[1] + Tower.tower_data[game_data["selected_tower"]]["radius"])
-                if check_location(game_data["map"], game_data["settings"], loc):
-                    game_data["towers"].append(Tower(game_data["selected_tower"], loc, Tower.tower_data[game_data["selected_tower"]]["radius"]))
-                    game_data["shop"].clicked_item = None
-                    game_data["selected_tower"] = False
 
 
 #### ====================================================================================================================== ####
@@ -88,15 +80,32 @@ def update(game_data):
     Output: None
     '''
     update_shop(game_data["shop"], game_data["current_currency"], game_data["settings"])
-    
-    ## Replace this with code to update the Enemies ##
-    for cell in game_data["map"].map_data:
-        if game_data["map"].map_data[cell]["value"] == "S":
-            loc = (cell[0] * game_data["settings"].tile_size[0], cell[1] * game_data["settings"].tile_size[1])
-    if len(game_data["enemies"]) < 5:
-        game_data["enemies"].append(Enemy("Lesser Alien", loc))
+
+    if game_data["shop"].clicked_item:
+        if not game_data["clicked"]:
+            x, y = pygame.mouse.get_pos()
+            if check_location(game_data["map"], game_data["settings"], (x, y)):
+                if x < 800:
+                    tower = Tower(game_data["shop"].clicked_item, (x, y), None)
+                    game_data["towers"].append(tower)
+                    game_data["current_currency"] -= game_data["shop"].shop_data[game_data["shop"].clicked_item]["cost"]
+                    game_data["shop"].clicked_item = None
+
+    if not random.randrange(60):
+        types = list(Enemy.enemy_data.keys())
+        chosen = random.choice(types)
+        enemy = Enemy(chosen, (60, 20))
+        game_data["enemies"].append(enemy)
+        
+    for e in game_data["enemies"]:
+        update_enemy(e, game_data["map"])
+        if e.health <= 0:
+            game_data["enemies"].remove(e)
+            game_data["current_currency"] += e.enemy_data[e.name]["worth"]
 
     ## Replace this with code to update the Towers ##
+    for tower in game_data["towers"]:
+        update_tower(tower, game_data["map"])
 
     pass # Remove this once you've implemented 'update()'
 
@@ -115,6 +124,19 @@ def render(game_data):
         render_enemy(enemy, game_data["screen"], game_data["settings"])
     for tower in game_data["towers"]:
         render_tower(tower, game_data["screen"], game_data["settings"])
+
+    for tower in game_data["towers"]:
+        for enemy in game_data["enemies"]:
+            delta = (tower.location[0] - enemy.location[0], tower.location[1] - enemy.location[1])
+            norm = math.sqrt(delta[0] ** 2 + delta[1] ** 2)
+            if norm < tower.radius:
+                tower.attacking = enemy
+
+                rads = math.atan2(delta[1], delta[0])
+                degs = abs(((rads * 180) / math.pi)) + 90
+                tower.rotation = degs
+
+                break
 
     pygame.display.update()
 

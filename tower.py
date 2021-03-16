@@ -4,6 +4,8 @@
 
 from helper_functions import *
 import pygame
+import math
+from enemy import *
 
 #### ====================================================================================================================== ####
 #############                                         TOWER_CLASS                                                  #############
@@ -28,18 +30,26 @@ class Tower:
         self.rate_of_fire = Tower.tower_data[tower_type]["rate_of_fire"]
         self.location = location
         self.isClicked = False
+        self.attacking = None
+        self.rotation = 0.0
 
 #### ====================================================================================================================== ####
 #############                                       TOWER_FUNCTIONS                                                #############
 #### ====================================================================================================================== ####
 
-def update_tower(tower, clicked):
-    # Replace with code for updating tower
-    pass # Remove this once you've completed the code
+def update_tower(tower, map):
+    if tower.attacking != None:
+        update_enemy(tower.attacking, map, None, tower.damage)
+    pass
 
 def render_tower(tower, screen, settings):
     ''' Helper function that renders a single provided Tower.
     Input: Tower Object, screen (pygame display), Settings Object
     Output: None
     '''
-    screen.blit(tower.sprite, tower.location)
+    rect = tower.sprite.get_rect(center=tower.location)
+    if tower.rotation == 0.0:
+        screen.blit(tower.sprite, rect)
+    else:
+        sprite = pygame.transform.rotate(tower.sprite, tower.rotation)
+        screen.blit(sprite, rect)
