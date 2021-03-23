@@ -32,7 +32,9 @@ def initialize():
     # Initialize game_data and return it
     game_data = { "screen": pygame.display.set_mode(settings.window_size),
                   "current_currency": settings.starting_currency,
-                  "current_wave": 0,
+                  #"current_corruption": settings.corruption,
+                  "current_wave": 1,
+                  "wave_started": False,
                   "stay_open": True,
                   "selected_tower": None,
                   "clicked": False,
@@ -43,7 +45,9 @@ def initialize():
                   "shop": Shop("Space", settings),
                   "map": Map(settings),
                   "clock": 0, 
-                  "health": 1000}
+                  "health": 1000,
+                  "enemies_spawned": 0,
+                  "max_spawn": 0}
 
     set_map(game_data["map"])
 
@@ -83,6 +87,10 @@ def update(game_data):
     Output: None
     '''
     update_shop(game_data["shop"], game_data["current_currency"], game_data["settings"])
+    game_data["tick"] = game_data["clock"].tick()
+
+    if not game_data["wave_started"]:
+        game_data["max_spawn"] = (game_data["current_wave"] * 5) + 25
 
     if game_data["shop"].clicked_item:
         if not game_data["clicked"]:
@@ -95,10 +103,18 @@ def update(game_data):
                     game_data["shop"].clicked_item = None
 
     if not random.randrange(60):
-        types = list(Enemy.enemy_data.keys())
-        chosen = random.choice(types)
-        enemy = Enemy(chosen, (60, 20))
-        game_data["enemies"].append(enemy)
+        if game_data["enemies_spawned"] != game_data["max_spawn"]:
+            types = list(Enemy.enemy_data.keys())
+            chosen = random.choice(types)
+            enemy = Enemy(chosen, (60, 20))
+            if not game_data["wave_started"]:
+                for i in range(2):
+                    game_data["enemies"].append(enemy)
+                    game_data["enemies_spawned"] = game_data["enemies_spawned"] + 2
+            else:
+                game_data["enemies"].append(enemy)
+                game_data["enemies_spawned"] = game_data["enemies_spawned"] + 1
+            game_data["wave_started"] = True
         
     for e in game_data["enemies"]:
         update_enemy(e, game_data["map"])
@@ -106,45 +122,24 @@ def update(game_data):
             game_data["enemies"].remove(e)
             game_data["current_currency"] += e.enemy_data[e.name]["worth"]
         x, y, val = tileLoc(e.location)
-        #print(val)
         if val == "E":
             game_data["enemies"].remove(e)
             game_data["health"] -= 10
 
-    ## Replace this with code to update the Towers ##
     for tower in game_data["towers"]:
         update_tower(tower, game_data["map"])
-        tower.last_fire += game_data["clock"].tick()
+        tower.last_fire += game_data["tick"]
 
-    for bullet in game_data["bullets"]:
-        update_bullet(bullet)
-
-        (x, y) = bullet.location
-        (velx, vely) = bullet.velocity
-
-        x += 1 - velx * 10
-
-        if (x < 0) or (x > pygame.display.get_surface().get_width()):
-            game_data["bullets"].remove(bullet)
-            
-        y += 0.5 - vely * 10
-
-        if (y < 0) or (y > pygame.display.get_surface().get_height()):
-            game_data["bullets"].remove(bullet)
-
-        bullet.location = (x, y)
-
-        enemy = bullet.goingFor
-        (ball_x, ball_y) = bullet.location
-        (target_x, target_y) = enemy.location[0] - enemy.size, enemy.location[1] - enemy.size # top left
-        (target_brx, target_bry) = enemy.location[0] + enemy.size, enemy.location[1] + enemy.size #bottom right
-
-        if (ball_x > target_x) and (ball_x < target_brx):
-            if (ball_y > target_y) and (ball_y < target_bry):
-                game_data["bullets"].remove(bullet)
-                update_enemy(enemy, game_data["map"], None, bullet.bullet_data["bullet"]["damage"])
-
-    pass # Remove this once you've implemented 'update()'
+    if game_data["wave_started"] and (len(game_data["enemies"]) == 0):
+        game_data["current_wave"] = game_data["current_wave"] + 1
+        b4mines = game_data["current_currency"]
+        for tower in game_data["towers"]:
+            if tower.name == "Mine Lv. 1":
+                game_data["current_currency"] += tower.tower_data[tower.name]["damage"]
+        print("Mine(s) gave a total of: " + str(game_data["current_currency"] - b4mines) + " coins.")
+        print("WAVE #" + str(game_data["current_wave"]) + " STARTING NOW!")
+        game_data["enemies_spawned"] = 0
+        game_data["wave_started"] = False
 
 #### ====================================================================================================================== ####
 #############                                            RENDER                                                    #############
@@ -176,19 +171,15 @@ def render(game_data):
         render_enemy(enemy, game_data["screen"], game_data["settings"])
     for tower in game_data["towers"]:
         render_tower(tower, game_data["screen"], game_data["settings"])
-    for bullet in game_data["bullets"]:
-        render_bullet(bullet, game_data["screen"])
 
     for tower in game_data["towers"]:
         for enemy in game_data["enemies"]:
             delta = (tower.location[0] - enemy.location[0], tower.location[1] - enemy.location[1])
             norm = math.sqrt(delta[0] ** 2 + delta[1] ** 2)
             if norm < tower.radius:
-                tower.attacking = enemy
-                loc = (tower.location[0] + 10, tower.location[1] + 10)
-                new_bullet = Bullet(loc, tower)
-                if tower.last_fire > 1000:
-                    game_data["bullets"].append(new_bullet)
+                pygame.draw.line(pygame.display.get_surface(), (255, 0, 0), tower.location, enemy.location)
+                if tower.last_fire > tower.rate_of_fire * 1000:
+                    update_enemy(enemy, game_data["map"], None, tower.tower_data[tower.name]["damage"])
                     tower.last_fire = 0
 
                 rads = math.atan2(delta[1], delta[0])
@@ -218,7 +209,6 @@ def main():
         process(game_data)
         update(game_data)
         render(game_data)
-
 
     # Exit pygame and Python
     pygame.quit()

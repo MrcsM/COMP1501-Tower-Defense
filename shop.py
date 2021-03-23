@@ -102,6 +102,11 @@ def render_shop(shop, screen, settings, current_currency):
     screen.blit(current_currency_text, (shop.location[0] + current_currency_text.get_width() // 3 + 30, 645))
     screen.blit(shop.ui_data["currency"], (shop.location[0] + 5, 650))
 
+    #Handle Corruption
+    # current_currency_text = settings.font.render("{}".format(current_currency), True, (254, 207, 0))
+    # screen.blit(current_currency_text, (shop.location[0] + current_currency_text.get_width() // 3 + 30, 645))
+    # screen.blit(shop.ui_data["currency"], (shop.location[0] + 5, 650))
+
     # Handle Mouse Over Tower
     if shop.selected_item is not None:
         selected_tower_text = settings.font.render(shop.selected_item, True, (254, 207, 0))

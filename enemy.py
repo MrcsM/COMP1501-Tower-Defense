@@ -30,6 +30,7 @@ class Enemy:
         self.direction = "Down"
         self.visited = set()
         self.worth = Enemy.enemy_data[enemy_type]["worth"]
+        self.spawn_time = 500
         
 
 #### ====================================================================================================================== ####
